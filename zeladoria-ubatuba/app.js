@@ -1,18 +1,18 @@
 const multer = require('multer');
 const express = require('express');
 const path = require('path');
-const db = require('./models/db'); //
+const db = require('./models/db'); 
 
 const app = express();
 
-// AJUSTE DE PORTA: O Render exige que a porta seja dinâmica
+// Porta dinâmica para o Render
 const port = process.env.PORT || 3000;
 
-// Configuração do Multer para salvar as fotos
+// Configuração do Multer corrigida para arquivos na raiz
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Como o app.js está em /src, voltamos um nível (../) para achar a pasta public
-    cb(null, path.join(__dirname, '../public/uploads/'));
+    // Como app.js está na raiz, basta entrar em public/uploads/
+    cb(null, path.join(__dirname, 'public/uploads/'));
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
@@ -25,25 +25,23 @@ const upload = multer({ storage: storage });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Permite que o navegador acesse as fotos na pasta uploads
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads'))); 
+// Servir arquivos estáticos (CSS, Imagens, JS do front-end)
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
 // --- ROTAS DE PÁGINAS (HTML) ---
 
-// Rota da página inicial (Formulário)
 app.get('/', (req, res) => {
-  // O app.js já está dentro de /src, então basta entrar em views/
+  // Caminho corrigido: app.js está no mesmo nível da pasta views
   res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
-// Rota da página do Administrador (Tabela)
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'views/admin.html'));
 });
 
 // --- ROTAS DE DADOS (API) ---
 
-// Rota para salvar uma nova ocorrência
 app.post('/reportar', upload.single('foto'), async (req, res) => {
     const { descricao, latitude, longitude } = req.body;
     const foto_url = req.file ? req.file.filename : null;
@@ -63,7 +61,6 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
     }
 });
 
-// Rota API para listar os dados na tabela
 app.get('/api/ocorrencias', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM ocorrencias ORDER BY data_criacao DESC');
@@ -74,7 +71,7 @@ app.get('/api/ocorrencias', async (req, res) => {
     }
 });
 
-// Inicialização necessária para o Render
+// Inicialização para o Render
 app.listen(port, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
