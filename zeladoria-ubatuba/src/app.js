@@ -1,7 +1,7 @@
 const multer = require('multer');
 const express = require('express');
 const path = require('path');
-const db = require('./src/models/db');
+const db = require('./models/db');
 
 const app = express();
 
