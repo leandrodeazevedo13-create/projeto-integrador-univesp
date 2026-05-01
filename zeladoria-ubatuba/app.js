@@ -1,52 +1,54 @@
 const multer = require('multer');
 const express = require('express');
 const path = require('path');
-const nodemailer = require('nodemailer'); // Importado para notificações
-const db = require('./models/db'); 
+const nodemailer = require('nodemailer'); 
+const db = require('./models/db'); // Certifique-se que db.js usa mysql2/promise
 
 const app = express();
 
-// Porta dinâmica para o Render
+// Porta dinâmica para o Render (0.0.0.0 é importante para o deploy)
 const port = process.env.PORT || 3000;
 
-// Configuração do Multer corrigida para arquivos na raiz
+// Configuração do Multer: Garante que o caminho exista
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Como app.js está na raiz, basta entrar em public/uploads/
-    cb(null, path.join(__dirname, 'public/uploads/'));
+    // Caminho absoluto para evitar erros dependendo de onde o processo inicia
+    cb(null, path.join(__dirname, 'public', 'uploads'));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+    // Remove espaços do nome original para evitar links quebrados na URL
+    const originalName = file.originalname.replace(/\s+/g, '-');
+    cb(null, Date.now() + '-' + originalName);
   }
 });
 
 const upload = multer({ storage: storage });
 
-// Configuração do transportador de e-mail (Nodemailer)
+// Configuração do Nodemailer usando as variáveis que você já configurou na Render
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Variável configurada no Render
-    pass: process.env.EMAIL_PASS  // Senha de app configurada no Render
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS  
   }
 });
 
-// Configurações do Express
+// Middlewares para processar dados de formulários
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir arquivos estáticos (CSS, Imagens, JS do front-end)
+// Servir arquivos estáticos corretamente
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'))); 
 
 // --- ROTAS DE PÁGINAS (HTML) ---
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/index.html'));
+  res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views/admin.html'));
+  res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
 // --- ROTAS DE DADOS (API) ---
@@ -56,52 +58,49 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
     const foto_url = req.file ? req.file.filename : null;
 
     try {
-        // 1. Salva no banco de dados da Aiven
+        // 1. Salva no banco de dados da Aiven (mysql-23c2c720...)
         const sql = 'INSERT INTO ocorrencias (descricao, latitude, longitude, foto_url) VALUES (?, ?, ?, ?)';
         await db.query(sql, [descricao, latitude, longitude, foto_url]);
         
-        // 2. Prepara e envia o e-mail de notificação
+        // 2. Notificação por e-mail
         const mailOptions = {
           from: process.env.EMAIL_USER,
-          to: process.env.EMAIL_USER, // Envia para o seu próprio e-mail
+          to: process.env.EMAIL_USER, 
           subject: '🔔 Novo Relato de Zeladoria - Ubatuba',
-          text: `Uma nova ocorrência foi registrada!\n\nDescrição: ${descricao}\nCoordenadas: ${latitude}, ${longitude}\nArquivo: ${foto_url}`
+          text: `Nova ocorrência!\n\nDescrição: ${descricao}\nCoordenadas: ${latitude}, ${longitude}\nFoto: ${foto_url}`
         };
 
-        transporter.sendMail(mailOptions, (err, info) => {
-          if (err) {
-            console.error('Erro ao enviar e-mail:', err);
-          } else {
-            console.log('E-mail de notificação enviado:', info.response);
-          }
-        });
+        // Envio assíncrono para não travar a resposta do usuário
+        transporter.sendMail(mailOptions).catch(err => console.error('Erro e-mail:', err));
 
-        // 3. Resposta de sucesso para o usuário
+        // 3. Resposta amigável para o morador de Ubatuba
         res.send(`
             <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-                <h2>Ocorrência enviada com sucesso!</h2>
-                <p>Obrigado por ajudar na zeladoria de Ubatuba.</p>
-                <hr>
-                <a href="/">Voltar ao início</a> | <a href="/admin">Ver Painel</a>
+                <h2 style="color: #2c3e50;">Ocorrência enviada com sucesso!</h2>
+                <p>Obrigado por colaborar com a manutenção da nossa cidade.</p>
+                <hr style="width: 50%; border: 0.5px solid #eee;">
+                <a href="/" style="text-decoration: none; color: #3498db;">Voltar ao início</a> | 
+                <a href="/admin" style="text-decoration: none; color: #3498db;">Ver Painel</a>
             </div>
         `);
     } catch (error) {
-        console.error('Erro ao salvar no banco:', error);
-        res.status(500).send('Erro interno ao processar o seu relato.');
+        console.error('Erro no banco:', error);
+        res.status(500).send('Erro ao processar relato. Verifique a conexão com o banco.');
     }
 });
 
 app.get('/api/ocorrencias', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM ocorrencias ORDER BY data_criacao DESC');
+        // Busca os dados para o painel administrativo
+        const [rows] = await db.query('SELECT * FROM ocorrencias ORDER BY id DESC');
         res.json(rows);
     } catch (error) {
-        console.error('Erro ao buscar dados:', error);
-        res.status(500).json({ error: 'Erro ao carregar dados' });
+        console.error('Erro API:', error);
+        res.status(500).json({ error: 'Erro ao carregar dados do banco' });
     }
 });
 
-// Inicialização para o Render
+// Inicialização focada no ambiente da Render
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Servidor rodando na porta ${port}`);
+  console.log(`Servidor de Zeladoria rodando na porta ${port}`);
 });
