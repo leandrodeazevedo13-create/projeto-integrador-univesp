@@ -4,7 +4,9 @@ const path = require('path');
 const db = require('./src/models/db');
 
 const app = express();
-const port = 3000;
+
+// AJUSTE DE PORTA: O Render exige que a porta seja dinâmica
+const port = process.env.PORT || 3000;
 
 // Configuração do Multer para salvar as fotos
 const storage = multer.diskStorage({
@@ -61,7 +63,6 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
 // Rota API que o admin.html usa para listar os dados na tabela
 app.get('/api/ocorrencias', async (req, res) => {
     try {
-        // Busca todas as ocorrências ordenadas pela mais recente
         const [rows] = await db.query('SELECT * FROM ocorrencias ORDER BY data_criacao DESC');
         res.json(rows);
     } catch (error) {
@@ -70,6 +71,7 @@ app.get('/api/ocorrencias', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+// AJUSTE DE INICIALIZAÇÃO: Necessário 0.0.0.0 para o Render aceitar conexões externas
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });
