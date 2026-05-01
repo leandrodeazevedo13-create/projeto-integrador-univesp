@@ -2,43 +2,94 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Zeladoria - Ubatuba</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        h1 { color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        /* Ajuste para o fundo bege que vimos na sua imagem */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f5f5dc; /* Bege claro da imagem */
+        }
+
+        /* Estilo do Topo que você queria adicionar */
+        .header-projeto {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 { color: #2c3e50; margin: 0; }
+        .container { max-width: 1000px; margin: auto; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #007bff; color: white; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        img { width: 100px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-mapa { display: inline-block; padding: 6px 12px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; }
-        .btn-mapa:hover { background-color: #218838; }
+        
+        img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; }
+        .btn-mapa { display: inline-block; padding: 8px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; }
+
+        /* Rodapé de contatos que você mencionou */
+        .footer-contatos {
+            margin-top: 30px;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .footer-contatos a { color: #00d1b2; text-decoration: none; }
     </style>
 </head>
 <body>
-    <h1>Ocorrências Registradas</h1>
-    <p><a href="/">+ Registrar Nova Ocorrência</a></p>
-    
-    <table id="tabela-ocorrencias">
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Descrição</th>
-                <th>Localização</th>
-                <th>Foto</th>
-            </tr>
-        </thead>
-        <tbody>
+
+    <div class="container">
+        <!-- TOP O QUE VOCÊ ADICIONOU -->
+        <div class="header-projeto">
+            <h1>Zeladoria Ubatuba</h1>
+            <p>Monitoramento e Manutenção Viária</p>
+            <strong>Responsável: Leandro de Azevedo</strong>
+        </div>
+
+        <p><a href="/" style="text-decoration: none; font-weight: bold;">← Voltar ao Formulário</a></p>
+        
+        <table id="tabela-ocorrencias">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Localização</th>
+                    <th>Foto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- O JavaScript vai preencher aqui -->
             </tbody>
-    </table>
+        </table>
+
+        <!-- RODAPÉ O QUE VOCÊ ADICIONOU -->
+        <div class="footer-contatos">
+            <p>Dúvidas ou Suporte:</p>
+            <p>WhatsApp: (12) 9XXXX-XXXX | E-mail: suporte@ubatuba.sp.gov.br</p>
+        </div>
+    </div>
 
     <script>
-        // Busca os dados da API que criamos no app.js
         fetch('/api/ocorrencias')
             .then(res => res.json())
             .then(dados => {
                 const corpoTabela = document.querySelector('#tabela-ocorrencias tbody');
-                corpoTabela.innerHTML = ''; // Limpa a tabela antes de preencher
+                corpoTabela.innerHTML = ''; 
+
+                if (dados.length === 0) {
+                    corpoTabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhuma ocorrência encontrada.</td></tr>';
+                    return;
+                }
 
                 dados.forEach(item => {
                     corpoTabela.innerHTML += `
@@ -51,13 +102,16 @@
                                 </a>
                             </td>
                             <td>
-                                ${item.foto_url ? `<img src="/uploads/${item.foto_url}" alt="Foto do problema">` : 'Sem foto'}
+                                ${item.foto_url ? `<img src="/uploads/${item.foto_url}" alt="Foto">` : 'Sem foto'}
                             </td>
                         </tr>
                     `;
                 });
             })
-            .catch(err => console.error('Erro ao buscar dados:', err));
+            .catch(err => {
+                console.error('Erro ao buscar dados:', err);
+                document.querySelector('#tabela-ocorrencias tbody').innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Erro ao carregar dados do banco.</td></tr>';
+            });
     </script>
 </body>
 </html>
