@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Zeladoria - Ubatuba</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        img { width: 100px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-mapa { display: inline-block; padding: 6px 12px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; }
+        .btn-mapa:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <h1>Ocorrências Registradas</h1>
+    <p><a href="/">+ Registrar Nova Ocorrência</a></p>
+    
+    <table id="tabela-ocorrencias">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Localização</th>
+                <th>Foto</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+        // Busca os dados da API que criamos no app.js
+        fetch('/api/ocorrencias')
+            .then(res => res.json())
+            .then(dados => {
+                const corpoTabela = document.querySelector('#tabela-ocorrencias tbody');
+                corpoTabela.innerHTML = ''; // Limpa a tabela antes de preencher
+
+                dados.forEach(item => {
+                    corpoTabela.innerHTML += `
+                        <tr>
+                            <td>${new Date(item.data_criacao).toLocaleString('pt-BR')}</td>
+                            <td>${item.descricao}</td>
+                            <td>
+                                <a class="btn-mapa" href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">
+                                    Ver no Mapa
+                                </a>
+                            </td>
+                            <td>
+                                ${item.foto_url ? `<img src="/uploads/${item.foto_url}" alt="Foto do problema">` : 'Sem foto'}
+                            </td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(err => console.error('Erro ao buscar dados:', err));
+    </script>
+</body>
+</html>

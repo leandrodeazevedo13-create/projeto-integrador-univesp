@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeladoria Ubatuba - Vias</title>
+    <style>
+        /* Configurações Gerais para não rolar a tela */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background-color: #fdf5e6; 
+            color: #333;
+            /* Removi o overflow:hidden para caso o celular tenha tela pequena */
+        }
+
+        header { 
+            background-image: linear-gradient(rgba(0, 51, 102, 0.4), rgba(0, 51, 102, 0.4)), 
+                              url('https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?q=80&w=1000'); 
+            background-size: cover; 
+            
+            /* MUDANÇA AQUI: Alinha a imagem pela base (parte de baixo) */
+            background-position: bottom; 
+            
+            color: white; 
+            text-align: center;
+            height: 50vh; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        header h1 { margin: 0; font-size: 2.5em; }
+        header p { margin: 10px 0 0; font-size: 1.2em; }
+
+        .container {
+            padding: 20px 25px; 
+            max-width: 450px; 
+            /* MUDANÇA AQUI: O card sobe um pouco para "abraçar" a foto */
+            margin: -60px auto 30px; 
+            background-color: white; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Container do Formulário Ajustado */
+        .container {
+            padding: 15px 25px; 
+            max-width: 400px; 
+            margin: -20px auto 0; 
+            background-color: white; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        .form-group { margin-bottom: 8px; }
+        
+        label { 
+            display: block; 
+            margin-bottom: 3px; 
+            font-weight: 600; 
+            font-size: 13px;
+            color: #003366;
+        }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 8px; 
+            border-radius: 6px; 
+            border: 1px solid #ccc; 
+            box-sizing: border-box; 
+            font-size: 13px;
+            outline: none;
+        }
+
+        /* Botão de Enviar */
+        .btn-enviar { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            font-weight: bold;
+            cursor: pointer; 
+            margin-top: 5px;
+        }
+
+        #status-gps { 
+            font-size: 11px; 
+            color: #666; 
+            text-align: center; 
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Zeladoria Ubatuba</h1>
+    <p>Monitoramento e Manutenção Viária</p>
+</header>
+
+<div class="container">
+    <form action="/reportar" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="tipo">Tipo de Ocorrência</label>
+            <select id="tipo" name="tipo">
+                <option>Buraco no asfalto</option>
+                <option>Asfalto cedendo / afundamento</option>
+                <option>Obstrução na via (entulho/objetos)</option>
+                <option>Alagamento na pista</option>
+                <option>Sinalização danificada</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="descricao">Descrição Detalhada</label>
+            <textarea id="descricao" name="descricao" placeholder="Tamanho aproximado, ponto de referência..." rows="2" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Registro Fotográfico</label>
+            <input type="file" name="foto" accept="image/*" capture="environment" required>
+        </div>
+
+        <input type="hidden" name="latitude" id="lat">
+        <input type="hidden" name="longitude" id="long">
+
+        <p id="status-gps">📍 Buscando localização...</p>
+
+        <button type="submit" class="btn-enviar">Enviar Relatório</button>
+    </form>
+</div>
+
+<script>
+    const statusGps = document.getElementById('status-gps');
+    const inputLat = document.getElementById('lat');
+    const inputLong = document.getElementById('long');
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            inputLat.value = pos.coords.latitude;
+            inputLong.value = pos.coords.longitude;
+            statusGps.style.color = "#28a745";
+            statusGps.innerHTML = "<strong>✓ Localização pronta para envio</strong>";
+        }, () => {
+            statusGps.style.color = "#dc3545";
+            statusGps.textContent = 'Ative o GPS para o relatório técnico.';
+        });
+    }
+</script>
+
+</body>
+</html>
