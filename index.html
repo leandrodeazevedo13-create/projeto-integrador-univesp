@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeladoria Ubatuba - Vias</title>
+    <style>
+        /* Configurações Gerais */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background-color: #fdf5e6; /* Cor de areia clara */
+            color: #333;
+        }
+
+        /* Cabeçalho com Foto de Ubatuba */
+        header { 
+            background-image: linear-gradient(rgba(0, 51, 102, 0.65), rgba(0, 51, 102, 0.65)), 
+                              url('ubatuba.jpg'); 
+            background-size: cover; 
+            background-position: center;
+            color: white; 
+            padding: 80px 20px; 
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        header h1 { margin: 0; font-size: 2.8em; }
+        header p { margin: 10px 0 0; font-size: 1.3em; font-weight: 300; }
+
+        /* Container do Formulário */
+        .container {
+            padding: 30px; 
+            max-width: 500px; 
+            margin: -40px auto 50px; /* Faz o card flutuar sobre o header */
+            background-color: white; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        .form-group { margin-bottom: 22px; }
+        
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            color: #003366;
+        }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #ccc; 
+            box-sizing: border-box; 
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #003366;
+            box-shadow: 0 0 5px rgba(0,51,102,0.2);
+        }
+
+        /* Botões Estilizados */
+        .btn-enviar { 
+            width: 100%; 
+            padding: 16px; 
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-enviar:hover { 
+            background-color: #218838; 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-gps { 
+            background-color: #6c757d; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-bottom: 10px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-gps:hover { background-color: #5a6268; }
+
+        #status-gps { 
+            font-size: 13px; 
+            color: #666; 
+            text-align: center; 
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Zeladoria Ubatuba</h1>
+    <p>Monitoramento e Manutenção Viária</p>
+</header>
+
+<div class="container">
+    <form action="#">
+        <div class="form-group">
+            <label for="tipo">Tipo de Ocorrência na Via</label>
+            <select id="tipo" name="tipo">
+                <option>Buraco no asfalto</option>
+                <option>Asfalto cedendo / afundamento</option>
+                <option>Obstrução na via (entulho/objetos)</option>
+                <option>Acúmulo de água / Alagamento na pista</option>
+                <option>Sinalização danificada (placas/faixas)</option>
+                <option>Outros problemas de pavimentação</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="descricao">Descrição Detalhada</label>
+            <textarea id="descricao" name="descricao" placeholder="Informe o tamanho aproximado ou se bloqueia o trânsito..." rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Registro Fotográfico</label>
+            <input type="file" name="foto" accept="image/*" capture="environment">
+        </div>
+
+        <div class="form-group">
+            <label>Localização do Incidente</label>
+            <button id="btn-gps" type="button" class="btn-gps">
+                📍 Capturar Localização Atual
+            </button>
+            <p id="status-gps">Aguardando sinal de GPS...</p>
+        </div>
+
+        <button type="submit" class="btn-enviar">Enviar Relatório</button>
+    </form>
+</div>
+
+<script>
+    const btnGps = document.getElementById('btn-gps');
+    const statusGps = document.getElementById('status-gps');
+
+    btnGps.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            statusGps.textContent = 'GPS não disponível neste navegador.';
+        } else {
+            statusGps.style.color = "#003366";
+            statusGps.textContent = 'Buscando satélites...';
+            navigator.geolocation.getCurrentPosition(success, error);
+        }
+    });
+
+    function success(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        statusGps.style.color = "#28a745";
+        statusGps.innerHTML = `<strong>Localizado com Sucesso!</strong><br>Lat: ${lat.toFixed(5)} | Lon: ${lon.toFixed(5)}`;
+    }
+
+    function error() {
+        statusGps.style.color = "#dc3545";
+        statusGps.textContent = 'Erro ao localizar. Ative o GPS do seu dispositivo.';
+    }
+// Seleciona o formulário
+const form = document.querySelector('form');
+
+form.addEventListener('submit', (e) => {
+    e.preventDefault(); // Impede a página de recarregar
+
+    // Coleta os dados do formulário
+    const tipo = document.getElementById('tipo').value;
+    const descricao = document.getElementById('descricao').value;
+    const gps = statusGps.textContent; // Pega o que está escrito no status do GPS
+
+    // Monta o corpo do e-mail
+    const assunto = encodeURIComponent(`Relatório de Incidência Viária - ${tipo}`);
+    const corpo = encodeURIComponent(
+        `RELATÓRIO TÉCNICO DE ZELADORIA URBANA\n` +
+        `-------------------------------------------\n` +
+        `FONTE: Sistema de Monitoramento Viário (Projeto Univesp)\n` +
+        `STATUS: Notificação de Incidente\n\n` +
+        `TIPO: ${tipo}\n` +
+        `DESCRIÇÃO: ${descricao}\n` +
+        `LOCALIZAÇÃO: ${gps}\n\n` +
+        `-------------------------------------------\n` +
+        `Solicito providências quanto à manutenção da via citada.`
+    );
+
+    // Abre o e-mail do usuário com tudo pronto
+    window.location.href = `mailto:prefeitura@ubatuba.sp.gov.br?subject=${assunto}&body=${corpo}`;
+});
+</script>
+
+</body>
+</html>
