@@ -5,8 +5,6 @@ const nodemailer = require('nodemailer');
 const db = require('./models/db'); 
 
 const app = express();
-
-// Porta dinâmica para o Render
 const port = process.env.PORT || 3000;
 
 // Configuração do Multer
@@ -46,32 +44,29 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
-// --- ROTA DE POST ATUALIZADA ---
+// --- ROTA DE POST (REPORTAR) ---
 
 app.post('/reportar', upload.single('foto'), async (req, res) => {
-    // Adicionado: contato_feedback extraído do formulário
     const { nome_usuario, tipo_ocorrencia, contato_feedback, descricao, latitude, longitude } = req.body;
     const foto_url = req.file ? req.file.filename : null;
 
     try {
-        // 1. Salva no banco incluindo o novo campo de contato
         const sql = `
             INSERT INTO ocorrencias 
-            (nome_usuario, tipo_ocorrencia, contato_feedback, descricao, latitude, longitude, foto_url) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (nome_usuario, tipo_ocorrencia, contato_feedback, descricao, latitude, longitude, foto_url, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendente')
         `;
         
         await db.query(sql, [
             nome_usuario || 'Anônimo', 
             tipo_ocorrencia, 
-            contato_feedback || 'Não informado', // Salva o contato ou um padrão
+            contato_feedback || 'Não informado', 
             descricao, 
             latitude, 
             longitude, 
             foto_url
         ]);
         
-        // 2. Notificação por e-mail com detalhes de contato para feedback
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: process.env.EMAIL_USER, 
@@ -79,29 +74,27 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
           text: `Nova ocorrência em Ubatuba!\n\n` +
                 `Enviado por: ${nome_usuario || 'Anônimo'}\n` +
                 `Tipo: ${tipo_ocorrencia}\n` +
-                `Contato para Feedback: ${contato_feedback || 'Nenhum'}\n` +
+                `Contato: ${contato_feedback || 'Nenhum'}\n` +
                 `Descrição: ${descricao}\n` +
-                `Coordenadas: ${latitude}, ${longitude}\n` +
-                `Foto: ${foto_url}`
+                `Coordenadas: ${latitude}, ${longitude}`
         };
 
         transporter.sendMail(mailOptions).catch(err => console.error('Erro e-mail:', err));
 
-        // 3. Resposta de sucesso personalizada para o cidadão
         res.send(`
             <div style="font-family: sans-serif; text-align: center; margin-top: 50px; color: #2c3e50;">
                 <h2>✅ Ocorrência enviada com sucesso!</h2>
                 <p>Obrigado pela contribuição para nossa cidade.</p>
-                <p style="font-size: 0.9em; color: #7f8c8d;">Se você deixou um contato, nossa equipe poderá enviar atualizações.</p>
-                <hr style="width: 50%; border: 0.5px solid #eee; margin: 20px auto;">
                 <a href="/" style="text-decoration: none; color: #3498db; font-weight: bold;">Voltar ao início</a>
             </div>
         `);
     } catch (error) {
         console.error('Erro no banco:', error);
-        res.status(500).send('Erro ao salvar no banco. Verifique se a coluna contato_feedback foi criada.');
+        res.status(500).send('Erro ao salvar no banco.');
     }
 });
+
+// --- ROTA DE BUSCA (API) ---
 
 app.get('/api/ocorrencias', async (req, res) => {
     try {
@@ -110,6 +103,21 @@ app.get('/api/ocorrencias', async (req, res) => {
     } catch (error) {
         console.error('Erro API:', error);
         res.status(500).json({ error: 'Erro ao carregar dados' });
+    }
+});
+
+// --- NOVO: ROTA PARA ATUALIZAR STATUS ---
+
+app.put('/api/ocorrencias/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { novoStatus } = req.body;
+
+    try {
+        await db.query('UPDATE ocorrencias SET status = ? WHERE id = ?', [novoStatus, id]);
+        res.json({ success: true, message: 'Status atualizado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao atualizar status:', error);
+        res.status(500).json({ error: 'Erro ao processar atualização' });
     }
 });
 

@@ -11,24 +11,23 @@
         .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 12px; }
+        th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 11px; }
         tr:hover { background-color: #f9f9f9; }
-        .btn-mapa { display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
+        .btn-mapa { display: inline-block; padding: 6px 10px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 11px; }
+        img { width: 90px; height: 60px; object-fit: cover; border-radius: 5px; }
         
-        /* Estilo do Botão de Relatório */
-        .btn-pdf {
-            background-color: #dc3545;
-            color: white;
+        .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
+        
+        /* Estilo para o seletor de status */
+        .select-status {
+            padding: 6px;
+            border-radius: 5px;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
+            color: white;
             font-weight: bold;
-            margin-bottom: 15px;
-            transition: 0.3s;
+            cursor: pointer;
+            font-size: 11px;
         }
-        .btn-pdf:hover { background-color: #a71d2a; }
     </style>
 </head>
 <body>
@@ -47,6 +46,7 @@
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="selecionar-todos"></th>
+                        <th>Status</th> <!-- Nova coluna -->
                         <th>Data</th>
                         <th>Tipo / Descrição / Autor</th>
                         <th>Contato</th>
@@ -55,135 +55,105 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="6" style="text-align:center;">Carregando dados com segurança...</td></tr>
+                    <tr><td colspan="7" style="text-align:center;">Carregando dados...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
+        // Cores para os status
+        const coresStatus = {
+            'Pendente': '#ffc107',    // Amarelo
+            'Em Andamento': '#17a2b8', // Azul
+            'Concluído': '#28a745'     // Verde
+        };
+
         async function carregarDados() {
             const tbody = document.querySelector('#tabela-ocorrencias tbody');
-            
             try {
                 const res = await fetch('/api/ocorrencias');
-                if (!res.ok) throw new Error('Erro na resposta do servidor');
-                
                 const ocorrencias = await res.json();
                 tbody.innerHTML = '';
 
-                if (!ocorrencias || ocorrencias.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
-                    return;
-                }
-
                 ocorrencias.forEach(item => {
-                    const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'Data n/a';
-                    const tipo = item.tipo_ocorrencia || 'Não identificado';
-                    const desc = item.descricao || 'Nenhuma descrição fornecida';
-                    const contato = item.contato_feedback || 'Não informado';
-                    const autor = item.nome_usuario || 'Anônimo';
+                    const statusAtual = item.status || 'Pendente';
+                    const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'n/a';
                     
-                    const mapLink = (item.latitude && item.longitude) 
-                        ? `https://www.google.com/maps?q=${item.latitude},${item.longitude}`
-                        : `#`;
-
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td><input type="checkbox" class="select-item"></td>
+                        <td>
+                            <select class="select-status" 
+                                    style="background-color: ${coresStatus[statusAtual] || '#666'}"
+                                    onchange="atualizarStatus(${item.id}, this.value)">
+                                <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                                <option value="Em Andamento" ${statusAtual === 'Em En-Andamento' || statusAtual === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                                <option value="Concluído" ${statusAtual === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                            </select>
+                        </td>
                         <td>${data}</td>
                         <td>
-                            <strong>${tipo}</strong><br>
-                            <small style="color: #666;">${desc}</small><br>
-                            <em style="font-size: 0.85em; color: #007bff;">Enviado por: ${autor}</em>
+                            <strong>${item.tipo_ocorrencia}</strong><br>
+                            <small>${item.descricao}</small><br>
+                            <em style="font-size: 10px; color: #007bff;">Autor: ${item.nome_usuario || 'Anônimo'}</em>
                         </td>
-                        <td>${contato}</td>
+                        <td>${item.contato_feedback || 'n/a'}</td>
                         <td>
-                            ${mapLink !== '#' 
-                                ? `<a class="btn-mapa" href="${mapLink}" target="_blank">📍 Ver no Mapa</a>` 
-                                : '<span style="color:gray">Sem GPS</span>'}
+                            ${item.latitude ? `<a class="btn-mapa" href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">📍 Ver</a>` : 'n/a'}
                         </td>
                         <td>
-                            ${item.foto_url 
-                                ? `<img src="/uploads/${item.foto_url}" alt="Foto" onerror="this.onerror=null; this.src='https://via.placeholder.com/100x70?text=Sem+Foto'">` 
-                                : '<span style="color:gray">Sem foto</span>'}
+                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}" onerror="this.src='https://via.placeholder.com/90x60?text=Erro'">` : 'Sem foto'}
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
             } catch (error) {
-                console.error('Erro ao buscar API:', error);
-                tbody.innerHTML = '<tr><td colspan="6" style="color:red; text-align:center;">Erro ao conectar com o servidor.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7">Erro ao carregar.</td></tr>';
             }
         }
 
-        // Função para gerar o Relatório
+        async function atualizarStatus(id, novoStatus) {
+            try {
+                const res = await fetch(`/api/ocorrencias/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ novoStatus })
+                });
+                if (res.ok) carregarDados(); // Recarrega para atualizar a cor
+            } catch (err) {
+                alert('Erro ao atualizar status');
+            }
+        }
+
         function gerarRelatorioPDF() {
             const selecionados = document.querySelectorAll('.select-item:checked');
+            if (selecionados.length === 0) return alert("Selecione algo!");
+
+            const janela = window.open('', '_blank');
+            let conteudo = `<html><body style="font-family:sans-serif; padding:20px;"><h1>Relatório de Zeladoria - Ubatuba</h1><hr>`;
             
-            if (selecionados.length === 0) {
-                alert("Por favor, selecione ao menos uma ocorrência na lista!");
-                return;
-            }
-
-            const janelaRelatorio = window.open('', '_blank');
-            let conteudo = `
-                <html>
-                <head>
-                    <title>Relatório de Manutenção - Ubatuba</title>
-                    <style>
-                        body { font-family: sans-serif; padding: 30px; line-height: 1.6; }
-                        .topo { border-bottom: 2px solid #007bff; margin-bottom: 20px; }
-                        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-                        .foto-relatorio { max-width: 250px; border-radius: 5px; margin-top: 10px; }
-                        h2 { color: #007bff; margin-top: 0; }
-                    </style>
-                </head>
-                <body>
-                    <div class="topo">
-                        <h1>Relatório de Manutenção Urbana</h1>
-                        <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
-                        <p>Responsável: Leandro de Azevedo</p>
-                    </div>
-            `;
-
             selecionados.forEach(cb => {
                 const tr = cb.closest('tr');
                 const colunas = tr.querySelectorAll('td');
-                const tipoDesc = colunas[2].innerHTML;
-                const contato = colunas[3].innerText;
-                const local = colunas[4].innerText;
-                const fotoSrc = colunas[5].querySelector('img') ? colunas[5].querySelector('img').src : '';
-
+                const statusTexto = colunas[1].querySelector('select').value;
+                
                 conteudo += `
-                    <div class="card">
-                        <h2>${colunas[2].querySelector('strong').innerText}</h2>
-                        <p><strong>Status:</strong> Pendente de Resolução</p>
-                        <p><strong>Descrição e Autor:</strong><br>${tipoDesc}</p>
-                        <p><strong>Contato para Feedback:</strong> ${contato}</p>
-                        <p><strong>Localização:</strong> ${local}</p>
-                        ${fotoSrc ? `<img src="${fotoSrc}" class="foto-relatorio">` : ''}
+                    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+                        <h3>${colunas[3].querySelector('strong').innerText} [Status: ${statusTexto}]</h3>
+                        <p>${colunas[3].querySelector('small').innerText}</p>
+                        <p>Localização: ${colunas[5].innerText.includes('📍') ? 'Disponível no sistema' : 'n/a'}</p>
                     </div>
                 `;
             });
 
-            conteudo += `
-                    <footer style="text-align: center; margin-top: 40px; font-size: 12px; color: #777;">
-                        Zeladoria Ubatuba - Gerado via Sistema Web Integrador
-                    </footer>
-                </body>
-                </html>
-            `;
-
-            janelaRelatorio.document.write(conteudo);
-            janelaRelatorio.document.close();
-            setTimeout(() => { janelaRelatorio.print(); }, 500);
+            janela.document.write(conteudo + '</body></html>');
+            janela.document.close();
+            setTimeout(() => { janela.print(); }, 500);
         }
 
-        // Selecionar todos os itens de uma vez
         document.getElementById('selecionar-todos').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.select-item');
-            checkboxes.forEach(cb => cb.checked = this.checked);
+            document.querySelectorAll('.select-item').forEach(cb => cb.checked = this.checked);
         });
 
         carregarDados();
