@@ -1,14 +1,15 @@
-<form action="/reportar" method="POST" enctype="multipart/form-data">
-    <!-- Identificação do Cidadão -->
-    <div class="form-group">
-        <label for="nome_usuario">👤 Seu Nome (Opcional)</label>
-        <input type="text" id="nome_usuario" name="nome_usuario" placeholder="Ex: Leandro de Azevedo">
+<form action="/reportar" method="POST" enctype="multipart/form-data" style="max-width: 500px; margin: auto;">
+    
+    <!-- 1. Identificação do Cidadão (Opcional) -->
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label for="nome_usuario" style="display: block; font-weight: bold;">👤 Seu Nome (Opcional)</label>
+        <input type="text" id="nome_usuario" name="nome_usuario" placeholder="Como deseja ser chamado?" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
     </div>
 
-    <!-- Categoria do Problema -->
-    <div class="form-group">
-        <label for="tipo_ocorrencia">📋 Tipo de Ocorrência</label>
-        <select id="tipo_ocorrencia" name="tipo_ocorrencia" required>
+    <!-- 2. Menu de Ocorrência (Garantindo Visibilidade) -->
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label for="tipo_ocorrencia" style="display: block; font-weight: bold;">📋 Tipo de Ocorrência</label>
+        <select id="tipo_ocorrencia" name="tipo_ocorrencia" required style="display: block; width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background-color: white;">
             <option value="">Selecione o tipo de problema...</option>
             <option value="Buraco no Asfalto">🕳️ Buraco no Asfalto</option>
             <option value="Iluminação Pública">💡 Iluminação Pública</option>
@@ -18,17 +19,23 @@
         </select>
     </div>
 
-    <!-- Detalhamento -->
-    <div class="form-group">
-        <label for="descricao">📝 Descrição Detalhada</label>
-        <textarea id="descricao" name="descricao" rows="3" placeholder="Conte-nos mais sobre o problema e um ponto de referência..." required></textarea>
+    <!-- 3. Detalhamento -->
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label for="descricao" style="display: block; font-weight: bold;">📝 Descrição Detalhada</label>
+        <textarea id="descricao" name="descricao" rows="3" placeholder="Conte-nos mais sobre o problema e um ponto de referência..." required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
     </div>
 
-    <!-- Mídia -->
-    <div class="form-group">
-        <label for="foto">📸 Tirar Foto ou Anexar</label>
-        <input type="file" id="foto" name="foto" accept="image/*" capture="environment">
-        <small style="color: #666; font-size: 11px;">A foto ajuda a equipe a identificar a gravidade.</small>
+    <!-- 4. Contato para Feedback (Substituindo o rodapé fixo) -->
+    <div class="form-group" style="margin-bottom: 15px; background-color: #f0f8ff; padding: 10px; border-radius: 4px; border: 1px dashed #007bff;">
+        <label for="contato_feedback" style="display: block; font-weight: bold; color: #0056b3;">📧 Deseja receber um feedback? (Opcional)</label>
+        <input type="text" id="contato_feedback" name="contato_feedback" placeholder="Deixe seu WhatsApp ou E-mail" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+        <small style="display: block; margin-top: 5px; color: #555;">Entraremos em contato apenas para atualizar sobre esta ocorrência.</small>
+    </div>
+
+    <!-- 5. Mídia -->
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label for="foto" style="display: block; font-weight: bold;">📸 Tirar Foto ou Anexar</label>
+        <input type="file" id="foto" name="foto" accept="image/*" capture="environment" style="width: 100%;">
     </div>
 
     <!-- Campos Automáticos (Geolocalização) -->
@@ -36,5 +43,5 @@
     <input type="hidden" id="longitude" name="longitude">
 
     <!-- Ação -->
-    <button type="submit" class="btn-enviar" style="margin-top: 10px;">🚀 Enviar Ocorrência</button>
+    <button type="submit" class="btn-enviar" style="width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">🚀 Enviar Ocorrência</button>
 </form>

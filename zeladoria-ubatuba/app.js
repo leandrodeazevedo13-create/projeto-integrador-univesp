@@ -46,53 +46,60 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
-// --- ROTA DE POST CORRIGIDA ---
+// --- ROTA DE POST ATUALIZADA ---
 
 app.post('/reportar', upload.single('foto'), async (req, res) => {
-    // Agora capturamos nome_usuario e tipo_ocorrencia vindos do formulário
-    const { nome_usuario, tipo_ocorrencia, descricao, latitude, longitude } = req.body;
+    // Adicionado: contato_feedback extraído do formulário
+    const { nome_usuario, tipo_ocorrencia, contato_feedback, descricao, latitude, longitude } = req.body;
     const foto_url = req.file ? req.file.filename : null;
 
     try {
-        // 1. Salva no banco incluindo as novas colunas
+        // 1. Salva no banco incluindo o novo campo de contato
         const sql = `
             INSERT INTO ocorrencias 
-            (nome_usuario, tipo_ocorrencia, descricao, latitude, longitude, foto_url) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            (nome_usuario, tipo_ocorrencia, contato_feedback, descricao, latitude, longitude, foto_url) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         
         await db.query(sql, [
             nome_usuario || 'Anônimo', 
             tipo_ocorrencia, 
+            contato_feedback || 'Não informado', // Salva o contato ou um padrão
             descricao, 
             latitude, 
             longitude, 
             foto_url
         ]);
         
-        // 2. Notificação por e-mail com mais detalhes
+        // 2. Notificação por e-mail com detalhes de contato para feedback
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: process.env.EMAIL_USER, 
           subject: `🔔 Novo Relato: ${tipo_ocorrencia}`,
-          text: `Nova ocorrência em Ubatuba!\n\nEnviado por: ${nome_usuario || 'Anônimo'}\nTipo: ${tipo_ocorrencia}\nDescrição: ${descricao}\nCoordenadas: ${latitude}, ${longitude}\nFoto: ${foto_url}`
+          text: `Nova ocorrência em Ubatuba!\n\n` +
+                `Enviado por: ${nome_usuario || 'Anônimo'}\n` +
+                `Tipo: ${tipo_ocorrencia}\n` +
+                `Contato para Feedback: ${contato_feedback || 'Nenhum'}\n` +
+                `Descrição: ${descricao}\n` +
+                `Coordenadas: ${latitude}, ${longitude}\n` +
+                `Foto: ${foto_url}`
         };
 
         transporter.sendMail(mailOptions).catch(err => console.error('Erro e-mail:', err));
 
-        // 3. Resposta de sucesso personalizada
+        // 3. Resposta de sucesso personalizada para o cidadão
         res.send(`
             <div style="font-family: sans-serif; text-align: center; margin-top: 50px; color: #2c3e50;">
                 <h2>✅ Ocorrência enviada com sucesso!</h2>
-                <p>Obrigado pela contribuição, ${nome_usuario || 'cidadão'}.</p>
+                <p>Obrigado pela contribuição para nossa cidade.</p>
+                <p style="font-size: 0.9em; color: #7f8c8d;">Se você deixou um contato, nossa equipe poderá enviar atualizações.</p>
                 <hr style="width: 50%; border: 0.5px solid #eee; margin: 20px auto;">
-                <a href="/" style="text-decoration: none; color: #3498db; font-weight: bold;">Voltar ao início</a> | 
-                <a href="/admin" style="text-decoration: none; color: #3498db;">Ver Painel Administrativo</a>
+                <a href="/" style="text-decoration: none; color: #3498db; font-weight: bold;">Voltar ao início</a>
             </div>
         `);
     } catch (error) {
         console.error('Erro no banco:', error);
-        res.status(500).send('Erro ao salvar no banco. Verifique se as colunas nome_usuario e tipo_ocorrencia foram criadas.');
+        res.status(500).send('Erro ao salvar no banco. Verifique se a coluna contato_feedback foi criada.');
     }
 });
 
