@@ -3,145 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Zeladoria - Ubatuba</title>
+    <title>Painel Administrativo - Zeladoria Ubatuba</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background-color: #f5f5dc; 
-        }
-
-        .header-projeto {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        h1 { color: #2c3e50; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5dc; margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; }
-        
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            overflow-x: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
+        .header { text-align: center; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #eee; padding: 15px; text-align: left; }
-        th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 13px; }
-        tr:hover { background-color: #f1f7ff; }
-        
-        img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
-        
-        .btn-mapa { 
-            display: inline-block; 
-            padding: 8px 12px; 
-            background-color: #28a745; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-        .btn-mapa:hover { background-color: #218838; }
-
-        .footer-contatos {
-            margin-top: 30px;
-            padding: 20px;
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            border-radius: 10px;
-        }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 12px; }
+        tr:hover { background-color: #f9f9f9; }
+        .btn-mapa { display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 12px; }
+        img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="header-projeto">
-            <h1>Zeladoria Ubatuba</h1>
-            <p>Monitoramento e Manutenção Viária</p>
-            <strong>Responsável: Leandro de Azevedo</strong>
+        <div class="header">
+            <h1>Relatório de Ocorrências</h1>
+            <p>Responsável: Leandro de Azevedo</p>
+            <a href="/" style="color: #007bff; font-weight: bold;">← Voltar ao Formulário</a>
         </div>
 
-        <p><a href="/" style="text-decoration: none; color: #007bff; font-weight: bold;">← Novo Reporte</a></p>
-        
         <div class="table-container">
             <table id="tabela-ocorrencias">
                 <thead>
                     <tr>
                         <th>Data</th>
-                        <th>Descrição</th>
+                        <th>Tipo / Descrição</th>
+                        <th>Contato</th>
                         <th>Localização</th>
                         <th>Foto</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="4" style="text-align:center;">Carregando ocorrências...</td></tr>
+                    <tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>
                 </tbody>
             </table>
-        </div>
-
-        <div class="footer-contatos">
-            <p>Dúvidas ou Suporte Técnico:</p>
-            <p>WhatsApp: (12) 9XXXX-XXXX | E-mail: suporte@ubatuba.sp.gov.br</p>
         </div>
     </div>
 
     <script>
-        async function carregarOcorrencias() {
+        async function carregarDados() {
             try {
-                const response = await fetch('/api/ocorrencias');
-                const dados = await response.json();
-                const corpoTabela = document.querySelector('#tabela-ocorrencias tbody');
-                
-                corpoTabela.innerHTML = ''; 
+                const res = await fetch('/api/ocorrencias');
+                const ocorrencias = await res.json();
+                const tbody = document.querySelector('#tabela-ocorrencias tbody');
+                tbody.innerHTML = '';
 
-                if (!dados || dados.length === 0) {
-                    corpoTabela.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhuma ocorrência registrada no sistema.</td></tr>';
+                if (ocorrencias.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
                     return;
                 }
 
-                dados.forEach(item => {
-                    // Tenta encontrar a data em diferentes nomes de coluna (ajuste conforme seu SQL)
-                    const rawDate = item.data_criacao || item.data || new Date();
-                    const dataFormatada = new Date(rawDate).toLocaleString('pt-BR');
+                ocorrencias.forEach(item => {
+                    // Ajuste de Data (converte a data do banco para PT-BR)
+                    const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'Recém-criado';
                     
-                    // Tenta encontrar o nome do arquivo da foto
-                    const nomeFoto = item.foto_url || item.foto;
-
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${dataFormatada}</td>
-                        <td><strong>${item.tipo_ocorrencia || 'Geral'}</strong><br>${item.descricao}</td>
+                        <td>${data}</td>
+                        <td>
+                            <strong>${item.tipo_ocorrencia}</strong><br>
+                            <small>${item.descricao || 'Sem descrição'}</small>
+                        </td>
+                        <td>${item.contato_feedback || 'Não informado'}</td>
                         <td>
                             <a class="btn-mapa" href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">
                                 📍 Ver no Mapa
                             </a>
                         </td>
                         <td>
-                            ${nomeFoto 
-                                ? `<img src="/uploads/${nomeFoto}" alt="Foto" onerror="this.src='https://via.placeholder.com/100x70?text=Sem+Foto'">` 
-                                : '<span style="color:gray italic">Nenhuma foto</span>'}
+                            ${item.foto_url 
+                                ? `<img src="/uploads/${item.foto_url}" alt="Foto" onerror="this.src='https://via.placeholder.com/100x70?text=Erro+Foto'">` 
+                                : '<span style="color:gray">Sem foto</span>'}
                         </td>
                     `;
-                    corpoTabela.appendChild(row);
+                    tbody.appendChild(row);
                 });
-
-            } catch (err) {
-                console.error('Erro ao buscar dados:', err);
-                document.querySelector('#tabela-ocorrencias tbody').innerHTML = 
-                    '<tr><td colspan="4" style="color:red; text-align:center; padding: 20px;">⚠️ Erro de conexão com o banco de dados.</td></tr>';
+            } catch (error) {
+                console.error('Erro ao buscar API:', error);
+                document.querySelector('#tabela-ocorrencias tbody').innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Erro ao carregar dados do servidor.</td></tr>';
             }
         }
 
-        // Executa a função ao abrir a página
-        carregarOcorrencias();
+        carregarDados();
     </script>
 </body>
 </html>
