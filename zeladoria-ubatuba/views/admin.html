@@ -8,13 +8,13 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5dc; margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; }
         .header { text-align: center; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; }
+        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 12px; }
         tr:hover { background-color: #f9f9f9; }
         .btn-mapa { display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 12px; }
-        img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 1px solid #ddd; }
+        img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -22,8 +22,8 @@
     <div class="container">
         <div class="header">
             <h1>Relatório de Ocorrências</h1>
-            <p>Responsável: Leandro de Azevedo</p>
-            <a href="/" style="color: #007bff; font-weight: bold;">← Voltar ao Formulário</a>
+            <p>Responsável: <strong>Leandro de Azevedo</strong></p>
+            <a href="/" style="color: #007bff; font-weight: bold; text-decoration: none;">← Voltar ao Formulário</a>
         </div>
 
         <div class="table-container">
@@ -38,7 +38,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>
+                    <tr><td colspan="5" style="text-align:center;">Carregando dados com segurança...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -46,37 +46,49 @@
 
     <script>
         async function carregarDados() {
+            const tbody = document.querySelector('#tabela-ocorrencias tbody');
+            
             try {
                 const res = await fetch('/api/ocorrencias');
+                
+                if (!res.ok) throw new Error('Erro na resposta do servidor');
+                
                 const ocorrencias = await res.json();
-                const tbody = document.querySelector('#tabela-ocorrencias tbody');
                 tbody.innerHTML = '';
 
-                if (ocorrencias.length === 0) {
+                if (!ocorrencias || ocorrencias.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
                     return;
                 }
 
                 ocorrencias.forEach(item => {
-                    // Ajuste de Data (converte a data do banco para PT-BR)
-                    const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'Recém-criado';
+                    // 1. Correção do "NULL" e "Piscando": Tratamos cada campo individualmente
+                    const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'Data n/a';
+                    const tipo = item.tipo_ocorrencia || 'Não identificado';
+                    const desc = item.descricao || 'Nenhuma descrição fornecida';
+                    const contato = item.contato_feedback || 'Não informado';
                     
+                    // 2. Validação de Coordenadas para não quebrar o link do mapa
+                    const mapLink = (item.latitude && item.longitude) 
+                        ? `https://www.google.com/maps?q=${item.latitude},${item.longitude}`
+                        : `#`;
+
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${data}</td>
                         <td>
-                            <strong>${item.tipo_ocorrencia}</strong><br>
-                            <small>${item.descricao || 'Sem descrição'}</small>
+                            <strong>${tipo}</strong><br>
+                            <small style="color: #666;">${desc}</small>
                         </td>
-                        <td>${item.contato_feedback || 'Não informado'}</td>
+                        <td>${contato}</td>
                         <td>
-                            <a class="btn-mapa" href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">
-                                📍 Ver no Mapa
-                            </a>
+                            ${mapLink !== '#' 
+                                ? `<a class="btn-mapa" href="${mapLink}" target="_blank">📍 Ver no Mapa</a>` 
+                                : '<span style="color:gray">Sem GPS</span>'}
                         </td>
                         <td>
                             ${item.foto_url 
-                                ? `<img src="/uploads/${item.foto_url}" alt="Foto" onerror="this.src='https://via.placeholder.com/100x70?text=Erro+Foto'">` 
+                                ? `<img src="/uploads/${item.foto_url}" alt="Foto" onerror="this.onerror=null; this.src='https://via.placeholder.com/100x70?text=Sem+Foto'">` 
                                 : '<span style="color:gray">Sem foto</span>'}
                         </td>
                     `;
@@ -84,11 +96,16 @@
                 });
             } catch (error) {
                 console.error('Erro ao buscar API:', error);
-                document.querySelector('#tabela-ocorrencias tbody').innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Erro ao carregar dados do servidor.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Erro ao conectar com o servidor. Verifique se o Render está ativo.</td></tr>';
             }
         }
 
+        // Inicia a carga
         carregarDados();
+
+        // Em vez de um loop infinito que faz a tela piscar, 
+        // atualizamos apenas a cada 60 segundos se necessário.
+        // setInterval(carregarDados, 60000); 
     </script>
 </body>
 </html>
