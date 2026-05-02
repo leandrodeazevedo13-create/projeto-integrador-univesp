@@ -6,19 +6,49 @@
     <title>Painel Administrativo - Zeladoria Ubatuba</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5dc; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; }
+        /* Aumentado para 98% para dar o máximo de espaço possível */
+        .container { max-width: 98%; margin: auto; }
+        
         .header { text-align: center; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        
+        .table-container { 
+            background: white; 
+            border-radius: 10px; 
+            overflow-x: auto; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 1000px; /* Garante que a tabela não esmague as colunas */
+        }
+
+        th, td { 
+            padding: 12px 8px; 
+            text-align: left; 
+            border-bottom: 1px solid #eee; 
+            font-size: 13px; 
+        }
+
         th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 11px; }
         tr:hover { background-color: #f9f9f9; }
+        
         .btn-mapa { display: inline-block; padding: 6px 10px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 11px; }
-        img { width: 90px; height: 60px; object-fit: cover; border-radius: 5px; }
+        
+        /* Ajuste na coluna da Foto */
+        .col-foto { width: 100px; text-align: center; }
+        img { 
+            width: 80px; 
+            height: 60px; 
+            object-fit: cover; 
+            border-radius: 5px; 
+            display: block;
+            margin: auto;
+        }
         
         .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
         
-        /* Estilo para o seletor de status */
         .select-status {
             padding: 6px;
             border-radius: 5px;
@@ -27,6 +57,14 @@
             font-weight: bold;
             cursor: pointer;
             font-size: 11px;
+            width: 115px;
+        }
+
+        /* Força a quebra de texto em descrições muito longas (como o wwwwww que vimos) */
+        .quebrar-texto {
+            max-width: 250px;
+            word-wrap: break-word;
+            white-space: normal;
         }
     </style>
 </head>
@@ -45,13 +83,13 @@
             <table id="tabela-ocorrencias">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selecionar-todos"></th>
-                        <th>Status</th> <!-- Nova coluna -->
-                        <th>Data</th>
+                        <th style="width: 30px;"><input type="checkbox" id="selecionar-todos"></th>
+                        <th style="width: 120px;">Status</th>
+                        <th style="width: 140px;">Data</th>
                         <th>Tipo / Descrição / Autor</th>
                         <th>Contato</th>
-                        <th>Localização</th>
-                        <th>Foto</th>
+                        <th style="width: 80px;">Localização</th>
+                        <th class="col-foto">Foto</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,11 +100,10 @@
     </div>
 
     <script>
-        // Cores para os status
         const coresStatus = {
-            'Pendente': '#ffc107',    // Amarelo
-            'Em Andamento': '#17a2b8', // Azul
-            'Concluído': '#28a745'     // Verde
+            'Pendente': '#ffc107',
+            'Em Andamento': '#17a2b8',
+            'Concluído': '#28a745'
         };
 
         async function carregarDados() {
@@ -88,22 +125,22 @@
                                     style="background-color: ${coresStatus[statusAtual] || '#666'}"
                                     onchange="atualizarStatus(${item.id}, this.value)">
                                 <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                                <option value="Em Andamento" ${statusAtual === 'Em En-Andamento' || statusAtual === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                                <option value="Em Andamento" ${statusAtual === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
                                 <option value="Concluído" ${statusAtual === 'Concluído' ? 'selected' : ''}>Concluído</option>
                             </select>
                         </td>
                         <td>${data}</td>
-                        <td>
+                        <td class="quebrar-texto">
                             <strong>${item.tipo_ocorrencia}</strong><br>
                             <small>${item.descricao}</small><br>
                             <em style="font-size: 10px; color: #007bff;">Autor: ${item.nome_usuario || 'Anônimo'}</em>
                         </td>
-                        <td>${item.contato_feedback || 'n/a'}</td>
+                        <td class="quebrar-texto">${item.contato_feedback || 'n/a'}</td>
                         <td>
                             ${item.latitude ? `<a class="btn-mapa" href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">📍 Ver</a>` : 'n/a'}
                         </td>
-                        <td>
-                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}" onerror="this.src='https://via.placeholder.com/90x60?text=Erro'">` : 'Sem foto'}
+                        <td class="col-foto">
+                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}" onerror="this.src='https://via.placeholder.com/80x60?text=Erro'">` : 'Sem foto'}
                         </td>
                     `;
                     tbody.appendChild(row);
@@ -120,7 +157,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ novoStatus })
                 });
-                if (res.ok) carregarDados(); // Recarrega para atualizar a cor
+                if (res.ok) carregarDados();
             } catch (err) {
                 alert('Erro ao atualizar status');
             }
