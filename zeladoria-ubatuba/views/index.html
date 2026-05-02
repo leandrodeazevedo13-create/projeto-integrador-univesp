@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zeladoria Ubatuba</title>
     <style>
-        /* Imagem de Fundo com truque para limpar cache */
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-image: url('/a.jpg?v=1.1'); 
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            background-color: #2c3e50; /* Cor de fundo caso a imagem demore */
+            background-color: #2c3e50;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .overlay {
-            background: rgba(0, 0, 0, 0.5); /* Escureci um pouco mais para destacar o card */
+            background: rgba(0, 0, 0, 0.5);
             width: 100%;
             min-height: 100vh;
             display: flex;
@@ -86,6 +84,7 @@
         }
 
         .btn-enviar:active { transform: scale(0.98); }
+        .btn-enviar:disabled { background-color: #6c757d; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -98,7 +97,8 @@
     </div>
 
     <div class="form-container">
-        <form action="/reportar" method="POST" enctype="multipart/form-data">
+        <!-- O formulário envia para a rota /reportar conforme seu back-end -->
+        <form id="formOcorrencia" action="/reportar" method="POST" enctype="multipart/form-data">
             
             <div class="form-group">
                 <label>👤 Seu Nome (Opcional)</label>
@@ -129,24 +129,43 @@
 
             <div class="form-group">
                 <label>📸 Foto da Situação</label>
+                <!-- capture="environment" abre a câmera traseira direto no celular -->
                 <input type="file" name="foto" accept="image/*" capture="environment">
             </div>
 
-            <input type="hidden" id="latitude" name="latitude">
-            <input type="hidden" id="longitude" name="longitude">
+            <!-- Campos invisíveis que guardam as coordenadas -->
+            <input type="hidden" id="latitude" name="latitude" value="">
+            <input type="hidden" id="longitude" name="longitude" value="">
 
-            <button type="submit" class="btn-enviar">🚀 Enviar Ocorrência</button>
+            <button type="submit" id="btnSubmit" class="btn-enviar">🚀 Enviar Ocorrência</button>
         </form>
     </div>
 </div>
 
 <script>
-    if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            document.getElementById('latitude').value = position.coords.latitude;
-            document.getElementById('longitude').value = position.coords.longitude;
-        });
-    }
+    // Tenta pegar a localização assim que a página carrega
+    window.onload = function() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.getElementById('latitude').value = position.coords.latitude;
+                    document.getElementById('longitude').value = position.coords.longitude;
+                    console.log("GPS Ativo:", position.coords.latitude, position.coords.longitude);
+                },
+                function(error) {
+                    console.warn("GPS não autorizado ou falhou. Enviando sem coordenadas.");
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        }
+    };
+
+    // Evita cliques duplos no botão de enviar
+    document.getElementById('formOcorrencia').onsubmit = function() {
+        const btn = document.getElementById('btnSubmit');
+        btn.innerHTML = "⌛ Enviando...";
+        btn.disabled = true;
+    };
 </script>
 
 </body>

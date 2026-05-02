@@ -6,15 +6,29 @@
     <title>Painel Administrativo - Zeladoria Ubatuba</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5dc; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; }
+        .container { max-width: 1200px; margin: auto; }
         .header { text-align: center; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 12px; }
         tr:hover { background-color: #f9f9f9; }
-        .btn-mapa { display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 12px; }
+        .btn-mapa { display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; }
         img { width: 100px; height: 70px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
+        
+        /* Estilo do Botão de Relatório */
+        .btn-pdf {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        .btn-pdf:hover { background-color: #a71d2a; }
     </style>
 </head>
 <body>
@@ -26,19 +40,22 @@
             <a href="/" style="color: #007bff; font-weight: bold; text-decoration: none;">← Voltar ao Formulário</a>
         </div>
 
+        <button class="btn-pdf" onclick="gerarRelatorioPDF()">📄 Gerar Relatório para Prefeitura (PDF)</button>
+
         <div class="table-container">
             <table id="tabela-ocorrencias">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="selecionar-todos"></th>
                         <th>Data</th>
-                        <th>Tipo / Descrição</th>
+                        <th>Tipo / Descrição / Autor</th>
                         <th>Contato</th>
                         <th>Localização</th>
                         <th>Foto</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="5" style="text-align:center;">Carregando dados com segurança...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Carregando dados com segurança...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -50,35 +67,35 @@
             
             try {
                 const res = await fetch('/api/ocorrencias');
-                
                 if (!res.ok) throw new Error('Erro na resposta do servidor');
                 
                 const ocorrencias = await res.json();
                 tbody.innerHTML = '';
 
                 if (!ocorrencias || ocorrencias.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
                     return;
                 }
 
                 ocorrencias.forEach(item => {
-                    // 1. Correção do "NULL" e "Piscando": Tratamos cada campo individualmente
                     const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'Data n/a';
                     const tipo = item.tipo_ocorrencia || 'Não identificado';
                     const desc = item.descricao || 'Nenhuma descrição fornecida';
                     const contato = item.contato_feedback || 'Não informado';
+                    const autor = item.nome_usuario || 'Anônimo';
                     
-                    // 2. Validação de Coordenadas para não quebrar o link do mapa
                     const mapLink = (item.latitude && item.longitude) 
                         ? `https://www.google.com/maps?q=${item.latitude},${item.longitude}`
                         : `#`;
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                        <td><input type="checkbox" class="select-item"></td>
                         <td>${data}</td>
                         <td>
                             <strong>${tipo}</strong><br>
-                            <small style="color: #666;">${desc}</small>
+                            <small style="color: #666;">${desc}</small><br>
+                            <em style="font-size: 0.85em; color: #007bff;">Enviado por: ${autor}</em>
                         </td>
                         <td>${contato}</td>
                         <td>
@@ -96,16 +113,80 @@
                 });
             } catch (error) {
                 console.error('Erro ao buscar API:', error);
-                tbody.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Erro ao conectar com o servidor. Verifique se o Render está ativo.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="color:red; text-align:center;">Erro ao conectar com o servidor.</td></tr>';
             }
         }
 
-        // Inicia a carga
-        carregarDados();
+        // Função para gerar o Relatório
+        function gerarRelatorioPDF() {
+            const selecionados = document.querySelectorAll('.select-item:checked');
+            
+            if (selecionados.length === 0) {
+                alert("Por favor, selecione ao menos uma ocorrência na lista!");
+                return;
+            }
 
-        // Em vez de um loop infinito que faz a tela piscar, 
-        // atualizamos apenas a cada 60 segundos se necessário.
-        // setInterval(carregarDados, 60000); 
+            const janelaRelatorio = window.open('', '_blank');
+            let conteudo = `
+                <html>
+                <head>
+                    <title>Relatório de Manutenção - Ubatuba</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 30px; line-height: 1.6; }
+                        .topo { border-bottom: 2px solid #007bff; margin-bottom: 20px; }
+                        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+                        .foto-relatorio { max-width: 250px; border-radius: 5px; margin-top: 10px; }
+                        h2 { color: #007bff; margin-top: 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="topo">
+                        <h1>Relatório de Manutenção Urbana</h1>
+                        <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                        <p>Responsável: Leandro de Azevedo</p>
+                    </div>
+            `;
+
+            selecionados.forEach(cb => {
+                const tr = cb.closest('tr');
+                const colunas = tr.querySelectorAll('td');
+                const tipoDesc = colunas[2].innerHTML;
+                const contato = colunas[3].innerText;
+                const local = colunas[4].innerText;
+                const fotoSrc = colunas[5].querySelector('img') ? colunas[5].querySelector('img').src : '';
+
+                conteudo += `
+                    <div class="card">
+                        <h2>${colunas[2].querySelector('strong').innerText}</h2>
+                        <p><strong>Status:</strong> Pendente de Resolução</p>
+                        <p><strong>Descrição e Autor:</strong><br>${tipoDesc}</p>
+                        <p><strong>Contato para Feedback:</strong> ${contato}</p>
+                        <p><strong>Localização:</strong> ${local}</p>
+                        ${fotoSrc ? `<img src="${fotoSrc}" class="foto-relatorio">` : ''}
+                    </div>
+                `;
+            });
+
+            conteudo += `
+                    <footer style="text-align: center; margin-top: 40px; font-size: 12px; color: #777;">
+                        Zeladoria Ubatuba - Gerado via Sistema Web Integrador
+                    </footer>
+                </body>
+                </html>
+            `;
+
+            janelaRelatorio.document.write(conteudo);
+            janelaRelatorio.document.close();
+            setTimeout(() => { janelaRelatorio.print(); }, 500);
+        }
+
+        // Selecionar todos os itens de uma vez
+        document.getElementById('selecionar-todos').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.select-item');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+
+        carregarDados();
     </script>
 </body>
 </html>
