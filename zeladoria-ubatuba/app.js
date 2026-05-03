@@ -106,7 +106,7 @@ app.get('/api/ocorrencias', async (req, res) => {
     }
 });
 
-// --- NOVO: ROTA PARA ATUALIZAR STATUS ---
+// --- ATUALIZAR STATUS ---
 
 app.put('/api/ocorrencias/:id/status', async (req, res) => {
     const { id } = req.params;
@@ -118,6 +118,21 @@ app.put('/api/ocorrencias/:id/status', async (req, res) => {
     } catch (error) {
         console.error('Erro ao atualizar status:', error);
         res.status(500).json({ error: 'Erro ao processar atualização' });
+    }
+});
+
+// --- NOVO: ROTA PARA EXCLUIR OCORRÊNCIA (MODERAÇÃO) ---
+
+app.delete('/api/ocorrencias/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Primeiro, o SQL deleta o registro no banco de dados
+        await db.query('DELETE FROM ocorrencias WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Ocorrência removida permanentemente!' });
+    } catch (error) {
+        console.error('Erro ao excluir:', error);
+        res.status(500).json({ error: 'Erro ao tentar excluir a ocorrência' });
     }
 });
 

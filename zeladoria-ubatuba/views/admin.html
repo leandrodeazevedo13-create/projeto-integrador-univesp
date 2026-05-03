@@ -6,7 +6,6 @@
     <title>Painel Administrativo - Zeladoria Ubatuba</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5dc; margin: 0; padding: 20px; }
-        /* Aumentado para 98% para dar o máximo de espaço possível */
         .container { max-width: 98%; margin: auto; }
         
         .header { text-align: center; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -21,7 +20,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 1000px; /* Garante que a tabela não esmague as colunas */
+            min-width: 1000px; 
         }
 
         th, td { 
@@ -36,7 +35,6 @@
         
         .btn-mapa { display: inline-block; padding: 6px 10px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 11px; }
         
-        /* Ajuste na coluna da Foto */
         .col-foto { width: 100px; text-align: center; }
         img { 
             width: 80px; 
@@ -46,6 +44,21 @@
             display: block;
             margin: auto;
         }
+
+        /* Estilo do Botão Excluir */
+        .btn-excluir {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 5px;
+            width: 100%;
+        }
+        .btn-excluir:hover { background-color: #cc0000; }
         
         .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
         
@@ -60,7 +73,6 @@
             width: 115px;
         }
 
-        /* Força a quebra de texto em descrições muito longas (como o wwwwww que vimos) */
         .quebrar-texto {
             max-width: 250px;
             word-wrap: break-word;
@@ -89,7 +101,7 @@
                         <th>Tipo / Descrição / Autor</th>
                         <th>Contato</th>
                         <th style="width: 80px;">Localização</th>
-                        <th class="col-foto">Foto</th>
+                        <th class="col-foto">Foto / Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -141,6 +153,7 @@
                         </td>
                         <td class="col-foto">
                             ${item.foto_url ? `<img src="/uploads/${item.foto_url}" onerror="this.src='https://via.placeholder.com/80x60?text=Erro'">` : 'Sem foto'}
+                            <button class="btn-excluir" onclick="excluirOcorrencia(${item.id})">🗑️ Excluir</button>
                         </td>
                     `;
                     tbody.appendChild(row);
@@ -160,6 +173,26 @@
                 if (res.ok) carregarDados();
             } catch (err) {
                 alert('Erro ao atualizar status');
+            }
+        }
+
+        // Função para Excluir
+        async function excluirOcorrencia(id) {
+            if (confirm("⚠️ Tem certeza que deseja excluir esta ocorrência permanentemente?")) {
+                try {
+                    const res = await fetch(`/api/ocorrencias/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (res.ok) {
+                        alert("Ocorrência removida!");
+                        carregarDados(); 
+                    } else {
+                        alert("Erro ao excluir.");
+                    }
+                } catch (err) {
+                    console.error("Erro na requisição:", err);
+                }
             }
         }
 
