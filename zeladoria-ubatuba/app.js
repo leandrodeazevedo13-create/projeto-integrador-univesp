@@ -7,7 +7,7 @@ const db = require('./models/db');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuração do Multer
+// Configuração do Multer para salvar as fotos em public/uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, 'public', 'uploads'));
@@ -35,7 +35,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'))); 
 
 // --- ROTAS DE PÁGINAS ---
-
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
@@ -45,7 +44,6 @@ app.get('/admin', (req, res) => {
 });
 
 // --- ROTA DE POST (REPORTAR) ---
-
 app.post('/reportar', upload.single('foto'), async (req, res) => {
     const { nome_usuario, tipo_ocorrencia, contato_feedback, descricao, latitude, longitude } = req.body;
     const foto_url = req.file ? req.file.filename : null;
@@ -71,21 +69,15 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
           from: process.env.EMAIL_USER,
           to: process.env.EMAIL_USER, 
           subject: `🔔 Novo Relato: ${tipo_ocorrencia}`,
-          text: `Nova ocorrência em Ubatuba!\n\n` +
-                `Enviado por: ${nome_usuario || 'Anônimo'}\n` +
-                `Tipo: ${tipo_ocorrencia}\n` +
-                `Contato: ${contato_feedback || 'Nenhum'}\n` +
-                `Descrição: ${descricao}\n` +
-                `Coordenadas: ${latitude}, ${longitude}`
+          text: `Nova ocorrência em Ubatuba!\n\n Enviado por: ${nome_usuario || 'Anônimo'}\n Tipo: ${tipo_ocorrencia}\n Descrição: ${descricao}`
         };
 
         transporter.sendMail(mailOptions).catch(err => console.error('Erro e-mail:', err));
 
         res.send(`
-            <div style="font-family: sans-serif; text-align: center; margin-top: 50px; color: #2c3e50;">
+            <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
                 <h2>✅ Ocorrência enviada com sucesso!</h2>
-                <p>Obrigado pela contribuição para nossa cidade.</p>
-                <a href="/" style="text-decoration: none; color: #3498db; font-weight: bold;">Voltar ao início</a>
+                <a href="/">Voltar ao início</a>
             </div>
         `);
     } catch (error) {
@@ -95,44 +87,35 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
 });
 
 // --- ROTA DE BUSCA (API) ---
-
 app.get('/api/ocorrencias', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM ocorrencias ORDER BY id DESC');
         res.json(rows);
     } catch (error) {
-        console.error('Erro API:', error);
         res.status(500).json({ error: 'Erro ao carregar dados' });
     }
 });
 
 // --- ATUALIZAR STATUS ---
-
 app.put('/api/ocorrencias/:id/status', async (req, res) => {
     const { id } = req.params;
     const { novoStatus } = req.body;
-
     try {
         await db.query('UPDATE ocorrencias SET status = ? WHERE id = ?', [novoStatus, id]);
-        res.json({ success: true, message: 'Status atualizado com sucesso!' });
+        res.json({ success: true });
     } catch (error) {
-        console.error('Erro ao atualizar status:', error);
-        res.status(500).json({ error: 'Erro ao processar atualização' });
+        res.status(500).json({ error: 'Erro ao atualizar' });
     }
 });
 
-// --- NOVO: ROTA PARA EXCLUIR OCORRÊNCIA (MODERAÇÃO) ---
-
+// --- EXCLUIR OCORRÊNCIA ---
 app.delete('/api/ocorrencias/:id', async (req, res) => {
     const { id } = req.params;
-
     try {
-        // Primeiro, o SQL deleta o registro no banco de dados
         await db.query('DELETE FROM ocorrencias WHERE id = ?', [id]);
-        res.json({ success: true, message: 'Ocorrência removida permanentemente!' });
+        res.json({ success: true });
     } catch (error) {
-        console.error('Erro ao excluir:', error);
-        res.status(500).json({ error: 'Erro ao tentar excluir a ocorrência' });
+        res.status(500).json({ error: 'Erro ao excluir' });
     }
 });
 

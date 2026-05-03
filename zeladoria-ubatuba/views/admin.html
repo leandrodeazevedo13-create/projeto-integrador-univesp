@@ -7,77 +7,16 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5dc; margin: 0; padding: 20px; }
         .container { max-width: 98%; margin: auto; }
-        
-        .header { text-align: center; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        .table-container { 
-            background: white; 
-            border-radius: 10px; 
-            overflow-x: auto; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-        }
-
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 1000px; 
-        }
-
-        th, td { 
-            padding: 12px 8px; 
-            text-align: left; 
-            border-bottom: 1px solid #eee; 
-            font-size: 13px; 
-        }
-
+        .header { text-align: center; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
         th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 11px; }
-        tr:hover { background-color: #f9f9f9; }
-        
-        .btn-mapa { display: inline-block; padding: 6px 10px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 11px; }
-        
-        .col-foto { width: 100px; text-align: center; }
-        img { 
-            width: 80px; 
-            height: 60px; 
-            object-fit: cover; 
-            border-radius: 5px; 
-            display: block;
-            margin: auto;
-        }
-
-        /* Estilo do Botão Excluir */
-        .btn-excluir {
-            background-color: #ff4d4d;
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 5px;
-            width: 100%;
-        }
-        .btn-excluir:hover { background-color: #cc0000; }
-        
+        .btn-excluir { background-color: #ff4d4d; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; }
         .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
-        
-        .select-status {
-            padding: 6px;
-            border-radius: 5px;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 11px;
-            width: 115px;
-        }
-
-        .quebrar-texto {
-            max-width: 250px;
-            word-wrap: break-word;
-            white-space: normal;
-        }
+        .quebrar-texto { max-width: 250px; word-wrap: break-word; white-space: normal; }
+        img { width: 80px; height: 60px; object-fit: cover; border-radius: 5px; display: block; margin: auto; }
+        .select-status { padding: 6px; border-radius: 5px; border: none; color: white; font-weight: bold; width: 115px; }
     </style>
 </head>
 <body>
@@ -86,7 +25,7 @@
         <div class="header">
             <h1>Relatório de Ocorrências</h1>
             <p>Responsável: <strong>Leandro de Azevedo</strong></p>
-            <a href="/" style="color: #007bff; font-weight: bold; text-decoration: none;">← Voltar ao Formulário</a>
+            <a href="/">← Voltar ao Formulário</a>
         </div>
 
         <button class="btn-pdf" onclick="gerarRelatorioPDF()">📄 Gerar Relatório para Prefeitura (PDF)</button>
@@ -101,7 +40,7 @@
                         <th>Tipo / Descrição / Autor</th>
                         <th>Contato</th>
                         <th style="width: 80px;">Localização</th>
-                        <th class="col-foto">Foto / Ações</th>
+                        <th style="width: 100px;">Foto / Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -112,11 +51,7 @@
     </div>
 
     <script>
-        const coresStatus = {
-            'Pendente': '#ffc107',
-            'Em Andamento': '#17a2b8',
-            'Concluído': '#28a745'
-        };
+        const coresStatus = { 'Pendente': '#ffc107', 'Em Andamento': '#17a2b8', 'Concluído': '#28a745' };
 
         async function carregarDados() {
             const tbody = document.querySelector('#tabela-ocorrencias tbody');
@@ -127,105 +62,65 @@
 
                 ocorrencias.forEach(item => {
                     const statusAtual = item.status || 'Pendente';
-                    const data = item.data_criacao ? new Date(item.data_criacao).toLocaleString('pt-BR') : 'n/a';
-                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td><input type="checkbox" class="select-item"></td>
                         <td>
-                            <select class="select-status" 
-                                    style="background-color: ${coresStatus[statusAtual] || '#666'}"
-                                    onchange="atualizarStatus(${item.id}, this.value)">
+                            <select class="select-status" style="background-color: ${coresStatus[statusAtual]}" onchange="atualizarStatus(${item.id}, this.value)">
                                 <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
                                 <option value="Em Andamento" ${statusAtual === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
                                 <option value="Concluído" ${statusAtual === 'Concluído' ? 'selected' : ''}>Concluído</option>
                             </select>
                         </td>
-                        <td>${data}</td>
-                        <td class="quebrar-texto">
-                            <strong>${item.tipo_ocorrencia}</strong><br>
-                            <small>${item.descricao}</small><br>
-                            <em style="font-size: 10px; color: #007bff;">Autor: ${item.nome_usuario || 'Anônimo'}</em>
-                        </td>
-                        <td class="quebrar-texto">${item.contato_feedback || 'n/a'}</td>
+                        <td>${new Date(item.data_criacao).toLocaleString('pt-BR')}</td>
+                        <td class="quebrar-texto"><strong>${item.tipo_ocorrencia}</strong><br><small>${item.descricao}</small></td>
+                        <td>${item.contato_feedback || 'n/a'}</td>
+                        <td><a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">📍 Ver</a></td>
                         <td>
-                            ${item.latitude ? `<a class="btn-mapa" href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">📍 Ver</a>` : 'n/a'}
-                        </td>
-                        <td class="col-foto">
-                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}" onerror="this.src='https://via.placeholder.com/80x60?text=Erro'">` : 'Sem foto'}
+                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}">` : 'Sem foto'}
                             <button class="btn-excluir" onclick="excluirOcorrencia(${item.id})">🗑️ Excluir</button>
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="7">Erro ao carregar.</td></tr>';
-            }
+            } catch (err) { tbody.innerHTML = '<tr><td colspan="7">Erro ao carregar.</td></tr>'; }
         }
 
-        async function atualizarStatus(id, novoStatus) {
-            try {
-                const res = await fetch(`/api/ocorrencias/${id}/status`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ novoStatus })
-                });
-                if (res.ok) carregarDados();
-            } catch (err) {
-                alert('Erro ao atualizar status');
-            }
-        }
-
-        // Função para Excluir
         async function excluirOcorrencia(id) {
-            if (confirm("⚠️ Tem certeza que deseja excluir esta ocorrência permanentemente?")) {
-                try {
-                    const res = await fetch(`/api/ocorrencias/${id}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    if (res.ok) {
-                        alert("Ocorrência removida!");
-                        carregarDados(); 
-                    } else {
-                        alert("Erro ao excluir.");
-                    }
-                } catch (err) {
-                    console.error("Erro na requisição:", err);
-                }
+            if (confirm("Deseja excluir permanentemente?")) {
+                const res = await fetch(`/api/ocorrencias/${id}`, { method: 'DELETE' });
+                if (res.ok) carregarDados();
             }
         }
 
         function gerarRelatorioPDF() {
             const selecionados = document.querySelectorAll('.select-item:checked');
             if (selecionados.length === 0) return alert("Selecione algo!");
-
             const janela = window.open('', '_blank');
-            let conteudo = `<html><body style="font-family:sans-serif; padding:20px;"><h1>Relatório de Zeladoria - Ubatuba</h1><hr>`;
+            let conteudo = `<html><body style="font-family:sans-serif; padding:20px;"><h1>Relatório Zeladoria Ubatuba</h1>`;
             
             selecionados.forEach(cb => {
                 const tr = cb.closest('tr');
                 const colunas = tr.querySelectorAll('td');
-                const statusTexto = colunas[1].querySelector('select').value;
-                
+                const fotoSrc = colunas[6].querySelector('img')?.src || '';
                 conteudo += `
-                    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-                        <h3>${colunas[3].querySelector('strong').innerText} [Status: ${statusTexto}]</h3>
-                        <p>${colunas[3].querySelector('small').innerText}</p>
-                        <p>Localização: ${colunas[5].innerText.includes('📍') ? 'Disponível no sistema' : 'n/a'}</p>
-                    </div>
-                `;
+                    <div style="border:1px solid #ccc; padding:15px; margin-bottom:20px; display:flex; gap:20px;">
+                        <div style="flex:1;">
+                            <h3>${colunas[3].querySelector('strong').innerText}</h3>
+                            <p>Status: ${colunas[1].querySelector('select').value}</p>
+                            <p>${colunas[3].querySelector('small').innerText}</p>
+                        </div>
+                        ${fotoSrc ? `<img src="${fotoSrc}" style="width:150px; height:100px; object-fit:cover;">` : ''}
+                    </div>`;
             });
-
             janela.document.write(conteudo + '</body></html>');
             janela.document.close();
-            setTimeout(() => { janela.print(); }, 500);
+            janela.onload = () => { setTimeout(() => janela.print(), 500); };
         }
 
-        document.getElementById('selecionar-todos').addEventListener('change', function() {
+        document.getElementById('selecionar-todos').onchange = function() {
             document.querySelectorAll('.select-item').forEach(cb => cb.checked = this.checked);
-        });
-
+        };
         carregarDados();
     </script>
 </body>
