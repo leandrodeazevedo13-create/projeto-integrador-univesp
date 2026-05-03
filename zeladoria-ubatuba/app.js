@@ -5,9 +5,9 @@ const nodemailer = require('nodemailer');
 const db = require('./models/db'); 
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000; // Ajustado para porta do Render
 
-// Configuração do Multer para salvar as fotos em public/uploads
+// Configuração do Multer para salvar as fotos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, 'public', 'uploads'));
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Configuração do Nodemailer
+// Configuração do Nodemailer (Mantida do seu código)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -65,6 +65,7 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
             foto_url
         ]);
         
+        // Disparo de e-mail
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: process.env.EMAIL_USER, 
@@ -75,7 +76,7 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
         transporter.sendMail(mailOptions).catch(err => console.error('Erro e-mail:', err));
 
         res.send(`
-            <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+            <div style="font-family: sans-serif; text-align: center; margin-top: 50_px;">
                 <h2>✅ Ocorrência enviada com sucesso!</h2>
                 <a href="/">Voltar ao início</a>
             </div>
@@ -86,7 +87,7 @@ app.post('/reportar', upload.single('foto'), async (req, res) => {
     }
 });
 
-// --- ROTA DE BUSCA (API) ---
+// --- API: BUSCAR DADOS ---
 app.get('/api/ocorrencias', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM ocorrencias ORDER BY id DESC');
@@ -96,7 +97,7 @@ app.get('/api/ocorrencias', async (req, res) => {
     }
 });
 
-// --- ATUALIZAR STATUS ---
+// --- API: ATUALIZAR STATUS ---
 app.put('/api/ocorrencias/:id/status', async (req, res) => {
     const { id } = req.params;
     const { novoStatus } = req.body;
@@ -108,7 +109,7 @@ app.put('/api/ocorrencias/:id/status', async (req, res) => {
     }
 });
 
-// --- EXCLUIR OCORRÊNCIA ---
+// --- API: EXCLUIR OCORRÊNCIA ---
 app.delete('/api/ocorrencias/:id', async (req, res) => {
     const { id } = req.params;
     try {

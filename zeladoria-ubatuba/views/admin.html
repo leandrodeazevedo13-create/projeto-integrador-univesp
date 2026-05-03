@@ -12,11 +12,12 @@
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
         th { background-color: #007bff; color: white; text-transform: uppercase; font-size: 11px; }
+        
         .btn-excluir { background-color: #ff4d4d; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px; font-weight: bold; }
         .btn-pdf { background-color: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
+        .select-status { padding: 6px; border-radius: 5px; border: none; color: white; font-weight: bold; width: 115px; cursor: pointer; }
         .quebrar-texto { max-width: 250px; word-wrap: break-word; white-space: normal; }
         img { width: 80px; height: 60px; object-fit: cover; border-radius: 5px; display: block; margin: auto; }
-        .select-status { padding: 6px; border-radius: 5px; border: none; color: white; font-weight: bold; width: 115px; }
     </style>
 </head>
 <body>
@@ -25,10 +26,10 @@
         <div class="header">
             <h1>Relatório de Ocorrências</h1>
             <p>Responsável: <strong>Leandro de Azevedo</strong></p>
-            <a href="/">← Voltar ao Formulário</a>
+            <a href="/" style="color: #007bff; font-weight: bold; text-decoration: none;">← Voltar ao Formulário</a>
         </div>
 
-        <button class="btn-pdf" onclick="gerarRelatorioPDF()">📄 Gerar Relatório para Prefeitura (PDF)</button>
+        <button class="btn-pdf" onclick="gerarRelatorioPDF()">📄 Gerar Relatório Profissional (PDF)</button>
 
         <div class="table-container">
             <table id="tabela-ocorrencias">
@@ -62,6 +63,8 @@
 
                 ocorrencias.forEach(item => {
                     const statusAtual = item.status || 'Pendente';
+                    const dataFormatada = new Date(item.data_criacao).toLocaleString('pt-BR');
+                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td><input type="checkbox" class="select-item"></td>
@@ -72,22 +75,37 @@
                                 <option value="Concluído" ${statusAtual === 'Concluído' ? 'selected' : ''}>Concluído</option>
                             </select>
                         </td>
-                        <td>${new Date(item.data_criacao).toLocaleString('pt-BR')}</td>
-                        <td class="quebrar-texto"><strong>${item.tipo_ocorrencia}</strong><br><small>${item.descricao}</small></td>
-                        <td>${item.contato_feedback || 'n/a'}</td>
-                        <td><a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank">📍 Ver</a></td>
+                        <td>${dataFormatada}</td>
+                        <td class="quebrar-texto">
+                            <strong>${item.tipo_ocorrencia}</strong><br>
+                            <small>${item.descricao}</small><br>
+                            <em style="font-size: 10px; color: #007bff;">Autor: ${item.nome_usuario || 'Anônimo'}</em>
+                        </td>
+                        <td class="quebrar-texto">${item.contato_feedback || 'n/a'}</td>
+                        <td><a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" target="_blank" style="text-decoration:none;">📍 Ver</a></td>
                         <td>
-                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}">` : 'Sem foto'}
+                            ${item.foto_url ? `<img src="/uploads/${item.foto_url}" onerror="this.src='https://via.placeholder.com/80x60?text=Erro'">` : 'Sem foto'}
                             <button class="btn-excluir" onclick="excluirOcorrencia(${item.id})">🗑️ Excluir</button>
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
-            } catch (err) { tbody.innerHTML = '<tr><td colspan="7">Erro ao carregar.</td></tr>'; }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="7">Erro ao carregar os dados.</td></tr>';
+            }
+        }
+
+        async function atualizarStatus(id, novoStatus) {
+            await fetch(`/api/ocorrencias/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ novoStatus })
+            });
+            carregarDados();
         }
 
         async function excluirOcorrencia(id) {
-            if (confirm("Deseja excluir permanentemente?")) {
+            if (confirm("⚠️ Tem certeza que deseja excluir esta ocorrência permanentemente?")) {
                 const res = await fetch(`/api/ocorrencias/${id}`, { method: 'DELETE' });
                 if (res.ok) carregarDados();
             }
@@ -95,32 +113,58 @@
 
         function gerarRelatorioPDF() {
             const selecionados = document.querySelectorAll('.select-item:checked');
-            if (selecionados.length === 0) return alert("Selecione algo!");
+            if (selecionados.length === 0) return alert("Selecione as ocorrências para o relatório.");
+
             const janela = window.open('', '_blank');
-            let conteudo = `<html><body style="font-family:sans-serif; padding:20px;"><h1>Relatório Zeladoria Ubatuba</h1>`;
-            
+            let conteudo = `
+                <html>
+                <head>
+                    <title>Relatório Zeladoria Ubatuba</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 40px; color: #333; }
+                        .header { text-align: center; border-bottom: 2px solid #007bff; margin-bottom: 20px; }
+                        .mensagem { background: #f9f9f9; padding: 15px; border-left: 5px solid #007bff; margin-bottom: 25px; font-style: italic; }
+                        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; display: flex; gap: 20px; page-break-inside: avoid; }
+                        .foto { width: 200px; height: 150px; object-fit: cover; border-radius: 5px; }
+                        .info { flex: 1; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Solicitação de Zeladoria Urbana</h1>
+                        <p>Município de Ubatuba - Responsável: Leandro de Azevedo</p>
+                    </div>
+                    <div class="mensagem">
+                        Prezados, solicitamos gentilmente a verificação das ocorrências abaixo registradas pela população para as devidas providências de manutenção.
+                    </div>`;
+
             selecionados.forEach(cb => {
                 const tr = cb.closest('tr');
                 const colunas = tr.querySelectorAll('td');
                 const fotoSrc = colunas[6].querySelector('img')?.src || '';
+
                 conteudo += `
-                    <div style="border:1px solid #ccc; padding:15px; margin-bottom:20px; display:flex; gap:20px;">
-                        <div style="flex:1;">
+                    <div class="card">
+                        <div class="info">
                             <h3>${colunas[3].querySelector('strong').innerText}</h3>
-                            <p>Status: ${colunas[1].querySelector('select').value}</p>
-                            <p>${colunas[3].querySelector('small').innerText}</p>
+                            <p><strong>Data/Hora:</strong> ${colunas[2].innerText}</p>
+                            <p><strong>Status:</strong> ${colunas[1].querySelector('select').value}</p>
+                            <p><strong>Descrição:</strong> ${colunas[3].querySelector('small').innerText}</p>
+                            <p><strong>Solicitante:</strong> ${colunas[3].querySelector('em').innerText}</p>
                         </div>
-                        ${fotoSrc ? `<img src="${fotoSrc}" style="width:150px; height:100px; object-fit:cover;">` : ''}
+                        ${fotoSrc ? `<img src="${fotoSrc}" class="foto">` : ''}
                     </div>`;
             });
+
             janela.document.write(conteudo + '</body></html>');
             janela.document.close();
-            janela.onload = () => { setTimeout(() => janela.print(), 500); };
+            janela.onload = () => { setTimeout(() => janela.print(), 800); };
         }
 
         document.getElementById('selecionar-todos').onchange = function() {
             document.querySelectorAll('.select-item').forEach(cb => cb.checked = this.checked);
         };
+
         carregarDados();
     </script>
 </body>
